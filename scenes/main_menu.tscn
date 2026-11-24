@@ -1,0 +1,201 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.07, 0.05, 0.08, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 56
+text = "ZOMBIE SURVIVAL"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "- LAST DAY -"
+horizontal_alignment = 1
+
+[node name="PlayButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(320, 54)
+layout_mode = 2
+text = "PLAY"
+
+[node name="OfflineButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(320, 54)
+layout_mode = 2
+text = "OFFLINE MODE"
+
+[node name="OnlineButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(320, 54)
+layout_mode = 2
+disabled = true
+text = "ONLINE MODE (PHASE 2)"
+
+[node name="SettingsButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(320, 54)
+layout_mode = 2
+text = "SETTINGS"
+
+[node name="ProfileButton" type="Button" parent="Center/VBox"]
+custom_minimum_size = Vector2(320, 54)
+layout_mode = 2
+text = "PROFILE"
+
+[node name="SettingsOverlay" type="CenterContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="SettingsOverlay"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="SettingsOverlay/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SettingsTitle" type="Label" parent="SettingsOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "SETTINGS"
+horizontal_alignment = 1
+
+[node name="MusicRow" type="HBoxContainer" parent="SettingsOverlay/Panel/VBox"]
+layout_mode = 2
+
+[node name="MusicLabel" type="Label" parent="SettingsOverlay/Panel/VBox/MusicRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "Music"
+
+[node name="MusicSlider" type="HSlider" parent="SettingsOverlay/Panel/VBox/MusicRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.8
+
+[node name="SfxRow" type="HBoxContainer" parent="SettingsOverlay/Panel/VBox"]
+layout_mode = 2
+
+[node name="SfxLabel" type="Label" parent="SettingsOverlay/Panel/VBox/SfxRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "Sound FX"
+
+[node name="SfxSlider" type="HSlider" parent="SettingsOverlay/Panel/VBox/SfxRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.8
+
+[node name="SensitivityRow" type="HBoxContainer" parent="SettingsOverlay/Panel/VBox"]
+layout_mode = 2
+
+[node name="SensitivityLabel" type="Label" parent="SettingsOverlay/Panel/VBox/SensitivityRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "Sensitivity"
+
+[node name="SensitivitySlider" type="HSlider" parent="SettingsOverlay/Panel/VBox/SensitivityRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+min_value = 0.3
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="GraphicsRow" type="HBoxContainer" parent="SettingsOverlay/Panel/VBox"]
+layout_mode = 2
+
+[node name="GraphicsLabel" type="Label" parent="SettingsOverlay/Panel/VBox/GraphicsRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+text = "Graphics"
+
+[node name="GraphicsOption" type="OptionButton" parent="SettingsOverlay/Panel/VBox/GraphicsRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+item_count = 2
+selected = 1
+popup/item_0/text = "Low"
+popup/item_0/id = 0
+popup/item_1/text = "High"
+popup/item_1/id = 1
+
+[node name="SettingsBackButton" type="Button" parent="SettingsOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "BACK"
+
+[node name="ProfileOverlay" type="CenterContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="ProfileOverlay"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="ProfileOverlay/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ProfileTitle" type="Label" parent="ProfileOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "PROFILE"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="ProfileOverlay/Panel/VBox"]
+layout_mode = 2
+text = "Player: Guest Survivor"
+
+[node name="LevelLabel" type="Label" parent="ProfileOverlay/Panel/VBox"]
+layout_mode = 2
+text = "Level: 1"
+
+[node name="NoteLabel" type="Label" parent="ProfileOverlay/Panel/VBox"]
+layout_mode = 2
+text = "Accounts and saved progress arrive in a later phase."
+
+[node name="ProfileBackButton" type="Button" parent="ProfileOverlay/Panel/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "BACK"
