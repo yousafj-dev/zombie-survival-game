@@ -39,8 +39,15 @@ jobs:
 
       - name: Install Android build template into project
         run: |
+          ./Godot_v4.3-stable_linux.x86_64 --headless --install-android-build-template || true
           mkdir -p android
           unzip -q -o ~/.local/share/godot/export_templates/4.3.stable/android_source.zip -d android
+          if [ ! -f android/build.gradle ]; then
+            src=$(dirname "$(find android -name build.gradle -print -quit)")
+            echo "Flattening template from: $src"
+            cp -r "$src"/. android/
+          fi
+          ls -la android
 
       - name: Export Android APK
         env:
