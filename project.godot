@@ -1,0 +1,38 @@
+; Engine configuration file.
+; Zombie Survival: Last Day — Phase 1 skeleton (Godot 4.3, Android, landscape).
+; This is a development foundation, NOT a finished game.
+
+config_version=5
+
+[application]
+
+config/name="Zombie Survival: Last Day"
+config/description="3D zombie survival shooter — Phase 1 offline skeleton."
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.3", "Mobile")
+config/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/handheld/orientation="landscape"
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[layer_names]
+
+3d_physics/layer_1="World"
+3d_physics/layer_2="Player"
+3d_physics/layer_3="Zombie"
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.05, 0.05, 0.08, 1)
