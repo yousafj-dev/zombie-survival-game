@@ -37,6 +37,11 @@ jobs:
       - name: Import project resources
         run: ./Godot_v4.3-stable_linux.x86_64 --headless --editor --quit || true
 
+      - name: Install Android build template into project
+        run: |
+          mkdir -p android
+          unzip -q -o ~/.local/share/godot/export_templates/4.3.stable/android_source.zip -d android
+
       - name: Export Android APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /home/runner/.android/debug.keystore
