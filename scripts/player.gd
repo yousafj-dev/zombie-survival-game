@@ -179,8 +179,8 @@ func _find_target(max_range: float) -> Node3D:
 func _finish_reload() -> void:
 	var id := _current_id()
 	var data := Weapons.get_weapon(id)
-	var need := int(data["magazine"]) - _mag_ammo[id]
-	var take := mini(need, _reserve_ammo[id])
+	var need: int = int(data["magazine"]) - int(_mag_ammo[id])
+	var take: int = mini(need, int(_reserve_ammo[id]))
 	_mag_ammo[id] += take
 	_reserve_ammo[id] -= take
 	ammo_changed.emit(_mag_ammo[id], _reserve_ammo[id])
