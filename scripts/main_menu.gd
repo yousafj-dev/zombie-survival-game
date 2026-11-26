@@ -18,9 +18,7 @@ const SETTINGS_PATH := "user://settings.cfg"
 
 func _ready() -> void:
 	$Center/VBox/PlayButton.pressed.connect(_start_game)
-	$Center/VBox/OfflineButton.pressed.connect(_start_game)
-	$Center/VBox/SettingsButton.pressed.connect(func() -> void: _settings_overlay.visible = true)
-	$Center/VBox/ProfileButton.pressed.connect(func() -> void: _profile_overlay.visible = true)
+	$OptionsMenu.get_popup().id_pressed.connect(_on_options_selected)
 	$SettingsOverlay/Panel/VBox/SettingsBackButton.pressed.connect(_close_settings)
 	$ProfileOverlay/Panel/VBox/ProfileBackButton.pressed.connect(func() -> void: _profile_overlay.visible = false)
 
@@ -33,6 +31,17 @@ func _ready() -> void:
 
 func _start_game() -> void:
 	get_tree().change_scene_to_file(GAME_SCENE)
+
+func _on_options_selected(id: int) -> void:
+	# 3-dot menu items: 0 = Offline Mode, 1 = Settings, 2 = Profile.
+	# (Online Mode is item 3 and stays disabled — Phase 2.)
+	match id:
+		0:
+			_start_game()
+		1:
+			_settings_overlay.visible = true
+		2:
+			_profile_overlay.visible = true
 
 func _close_settings() -> void:
 	_save_settings()
