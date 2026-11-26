@@ -1,83 +1,335 @@
 extends Control
 
-## Main menu (Phase 1 skeleton).
-## Play and Offline both start the offline Dead City level — online mode is
-## Phase 2, so its button is disabled. Settings adjust the Music/SFX audio
-## buses for real and persist sensitivity + graphics choice to
-## user://settings.cfg. Profile is a placeholder panel for now.
+## Lobby main menu. Everything lives on this one screen — no hidden
+## menus, no popups: the soldier on his showcase patch (3D SubViewport),
+## the map cards (only Dead City is unlocked), the gun cards (real stats
+## from weapons.gd; the pick is shown in the showcase AND used as the
+## starting weapon in game), the settings (sound on/off + sensitivity),
+## and the big PLAY button.
+## The Z emblem is NOT here — it stays only as the app icon.
+## Choices persist to user://settings.cfg (keys: settings/starting_weapon,
+## settings/sound, settings/sensitivity — the same file player.gd reads).
 
 const GAME_SCENE := "res://scenes/game.tscn"
+const SHOWCASE_SCENE := "res://scenes/showcase.tscn"
 const SETTINGS_PATH := "user://settings.cfg"
 
-@onready var _settings_overlay: Control = $SettingsOverlay
-@onready var _profile_overlay: Control = $ProfileOverlay
-@onready var _music_slider: HSlider = $SettingsOverlay/Panel/VBox/MusicRow/MusicSlider
-@onready var _sfx_slider: HSlider = $SettingsOverlay/Panel/VBox/SfxRow/SfxSlider
-@onready var _sensitivity_slider: HSlider = $SettingsOverlay/Panel/VBox/SensitivityRow/SensitivitySlider
-@onready var _graphics_option: OptionButton = $SettingsOverlay/Panel/VBox/GraphicsRow/GraphicsOption
+const MAPS: Array = [
+	{"id": "dead_city", "name": "Dead City", "locked": false},
+	{"id": "dark_forest", "name": "Dark Forest", "locked": true},
+	{"id": "military_base", "name": "Military Base", "locked": true},
+	{"id": "dead_village", "name": "Dead Village", "locked": true},
+]
+
+const COL_GREEN := Color(0.65, 0.91, 0.2)
+const COL_TEXT := Color(0.92, 0.94, 0.9)
+const COL_DIM := Color(0.6, 0.63, 0.58)
+const COL_PANEL := Color(0.08, 0.1, 0.07, 0.94)
+const COL_CARD := Color(0.13, 0.15, 0.12)
+const COL_CARD_HOVER := Color(0.17, 0.2, 0.15)
+const COL_CARD_SELECTED := Color(0.22, 0.32, 0.12)
+const COL_CARD_DISABLED := Color(0.07, 0.07, 0.07)
+
+var _selected_weapon: String = "pistol"
+var _selected_map: String = "dead_city"
+var _gun_buttons: Dictionary = {}
+var _map_buttons: Dictionary = {}
+var _showcase: Node = null
+var _sound_check: CheckButton
+var _sens_slider: HSlider
+var _sens_value: Label
+var _click_player: AudioStreamPlayer
 
 func _ready() -> void:
-	$Center/VBox/PlayButton.pressed.connect(_start_game)
-	$OptionsMenu.get_popup().id_pressed.connect(_on_options_selected)
-	$SettingsOverlay/Panel/VBox/SettingsBackButton.pressed.connect(_close_settings)
-	$ProfileOverlay/Panel/VBox/ProfileBackButton.pressed.connect(func() -> void: _profile_overlay.visible = false)
-
-	_music_slider.value_changed.connect(func(v: float) -> void: _set_bus_volume("Music", v))
-	_sfx_slider.value_changed.connect(func(v: float) -> void: _set_bus_volume("SFX", v))
-	_sensitivity_slider.value_changed.connect(func(_v: float) -> void: _save_settings())
-	_graphics_option.item_selected.connect(func(_i: int) -> void: _apply_graphics(); _save_settings())
-
+	_click_player = AudioStreamPlayer.new()
+	_click_player.bus = &"SFX"
+	_click_player.stream = SfxGen.ui_click()
+	add_child(_click_player)
+	_build_ui()
 	_load_settings()
 
-func _start_game() -> void:
+# --- layout --------------------------------------------------------------
+
+func _build_ui() -> void:
+	var margin := MarginContainer.new()
+	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	add_child(margin)
+
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 8)
+	margin.add_child(root)
+
+	var title := Label.new()
+	title.text = "ZOMBIE SURVIVAL"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 44)
+	title.add_theme_color_override("font_color", COL_GREEN)
+	root.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.text = "- LAST DAY -"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 20)
+	subtitle.add_theme_color_override("font_color", COL_TEXT)
+	root.add_child(subtitle)
+
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 12)
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(columns)
+
+	columns.add_child(_build_character_column())
+	columns.add_child(_build_maps_column())
+	columns.add_child(_build_guns_settings_column())
+
+func _panel() -> PanelContainer:
+	var p := PanelContainer.new()
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	p.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = COL_PANEL
+	sb.border_color = Color(0.3, 0.38, 0.22)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(10)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	p.add_theme_stylebox_override("panel", sb)
+	return p
+
+func _column(panel: PanelContainer) -> VBoxContainer:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	panel.add_child(v)
+	return v
+
+func _header(text: String) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", 22)
+	l.add_theme_color_override("font_color", COL_GREEN)
+	return l
+
+func _card_style(bg: Color, border: Color) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 10
+	sb.content_margin_right = 10
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	return sb
+
+func _style_card(b: Button) -> void:
+	b.add_theme_stylebox_override("normal", _card_style(COL_CARD, Color(0.28, 0.3, 0.25)))
+	b.add_theme_stylebox_override("hover", _card_style(COL_CARD_HOVER, Color(0.4, 0.45, 0.35)))
+	b.add_theme_stylebox_override("pressed", _card_style(COL_CARD_SELECTED, COL_GREEN))
+	b.add_theme_stylebox_override("disabled", _card_style(COL_CARD_DISABLED, Color(0.16, 0.16, 0.16)))
+	b.add_theme_color_override("font_color", COL_TEXT)
+	b.add_theme_color_override("font_hover_color", COL_TEXT)
+	b.add_theme_color_override("font_pressed_color", COL_TEXT)
+	b.add_theme_color_override("font_disabled_color", COL_DIM)
+
+func _build_character_column() -> PanelContainer:
+	var panel := _panel()
+	var v := _column(panel)
+	v.add_child(_header("CHARACTER"))
+
+	var svc := SubViewportContainer.new()
+	svc.name = "ShowcaseView"
+	svc.custom_minimum_size = Vector2(380, 300)
+	svc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	svc.stretch = true
+	var sv := SubViewport.new()
+	sv.name = "ShowcaseViewport"
+	sv.size = Vector2i(380, 300)
+	sv.own_world_3d = true
+	sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	svc.add_child(sv)
+	_showcase = load(SHOWCASE_SCENE).instantiate()
+	sv.add_child(_showcase)
+	v.add_child(svc)
+
+	var play := Button.new()
+	play.name = "PlayButton"
+	play.text = "▶  PLAY"
+	play.custom_minimum_size = Vector2(0, 72)
+	play.add_theme_font_size_override("font_size", 32)
+	play.add_theme_stylebox_override("normal", _card_style(Color(0.25, 0.38, 0.1), COL_GREEN))
+	play.add_theme_stylebox_override("hover", _card_style(Color(0.32, 0.48, 0.13), COL_GREEN))
+	play.add_theme_stylebox_override("pressed", _card_style(Color(0.18, 0.27, 0.07), COL_GREEN))
+	play.add_theme_color_override("font_color", COL_TEXT)
+	play.add_theme_color_override("font_hover_color", COL_TEXT)
+	play.add_theme_color_override("font_pressed_color", COL_TEXT)
+	play.pressed.connect(_on_play_pressed)
+	v.add_child(play)
+	return panel
+
+func _build_maps_column() -> PanelContainer:
+	var panel := _panel()
+	var v := _column(panel)
+	v.add_child(_header("MAPS"))
+	for m in MAPS:
+		var id := str(m["id"])
+		var b := Button.new()
+		b.name = "MapButton_" + id
+		b.toggle_mode = true
+		b.custom_minimum_size = Vector2(0, 68)
+		b.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		b.add_theme_font_size_override("font_size", 21)
+		if bool(m["locked"]):
+			b.text = str(m["name"]) + "\nLOCKED — Phase 2"
+			b.disabled = true
+		else:
+			b.text = str(m["name"]) + "\nReady — tap to select"
+		_style_card(b)
+		b.pressed.connect(_on_map_pressed.bind(id))
+		_map_buttons[id] = b
+		v.add_child(b)
+	return panel
+
+func _build_guns_settings_column() -> PanelContainer:
+	var panel := _panel()
+	var v := _column(panel)
+	v.add_child(_header("GUNS"))
+	for id in Weapons.ORDER:
+		var data := Weapons.get_weapon(id)
+		var dmg := str(int(data["damage"]))
+		if int(data["pellets"]) > 1:
+			dmg += "×" + str(int(data["pellets"]))
+		var b := Button.new()
+		b.name = "GunButton_" + id
+		b.toggle_mode = true
+		b.custom_minimum_size = Vector2(0, 72)
+		b.add_theme_font_size_override("font_size", 20)
+		b.text = "%s\nDamage %s · Fire rate %.1f/s · Mag %d" % [
+			str(data["name"]), dmg, float(data["fire_rate"]), int(data["magazine"])]
+		_style_card(b)
+		b.pressed.connect(_on_gun_pressed.bind(id))
+		_gun_buttons[id] = b
+		v.add_child(b)
+
+	v.add_child(_header("SETTINGS"))
+
+	var sound_row := HBoxContainer.new()
+	sound_row.add_theme_constant_override("separation", 10)
+	var sound_label := Label.new()
+	sound_label.text = "Sound"
+	sound_label.custom_minimum_size = Vector2(120, 0)
+	sound_label.add_theme_font_size_override("font_size", 20)
+	sound_label.add_theme_color_override("font_color", COL_TEXT)
+	sound_row.add_child(sound_label)
+	_sound_check = CheckButton.new()
+	_sound_check.name = "SoundCheck"
+	_sound_check.text = "ON"
+	_sound_check.add_theme_font_size_override("font_size", 20)
+	_sound_check.add_theme_color_override("font_color", COL_TEXT)
+	_sound_check.toggled.connect(_on_sound_toggled)
+	sound_row.add_child(_sound_check)
+	v.add_child(sound_row)
+
+	var sens_label := Label.new()
+	sens_label.text = "Sensitivity"
+	sens_label.add_theme_font_size_override("font_size", 20)
+	sens_label.add_theme_color_override("font_color", COL_TEXT)
+	v.add_child(sens_label)
+
+	var sens_row := HBoxContainer.new()
+	sens_row.add_theme_constant_override("separation", 10)
+	_sens_slider = HSlider.new()
+	_sens_slider.name = "SensitivitySlider"
+	_sens_slider.min_value = 0.5
+	_sens_slider.max_value = 2.0
+	_sens_slider.step = 0.05
+	_sens_slider.value = 1.0
+	_sens_slider.custom_minimum_size = Vector2(240, 44)
+	_sens_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sens_slider.value_changed.connect(_on_sensitivity_changed)
+	sens_row.add_child(_sens_slider)
+	_sens_value = Label.new()
+	_sens_value.name = "SensitivityValue"
+	_sens_value.text = "1.00"
+	_sens_value.custom_minimum_size = Vector2(56, 0)
+	_sens_value.add_theme_font_size_override("font_size", 20)
+	_sens_value.add_theme_color_override("font_color", COL_TEXT)
+	sens_row.add_child(_sens_value)
+	v.add_child(sens_row)
+	return panel
+
+# --- selection -----------------------------------------------------------
+
+func _on_map_pressed(id: String) -> void:
+	_select_map(id)
+	_click_player.play()
+
+func _select_map(id: String) -> void:
+	_selected_map = id
+	for key in _map_buttons.keys():
+		(_map_buttons[key] as Button).set_pressed_no_signal(str(key) == id)
+
+func _on_gun_pressed(id: String) -> void:
+	_select_weapon(id)
+	_save_settings()
+	_click_player.play()
+
+func _select_weapon(id: String) -> void:
+	_selected_weapon = id
+	for key in _gun_buttons.keys():
+		(_gun_buttons[key] as Button).set_pressed_no_signal(str(key) == id)
+	if _showcase != null and _showcase.has_method("set_weapon"):
+		_showcase.set_weapon(id)
+
+func _on_sound_toggled(on: bool) -> void:
+	_sound_check.text = "ON" if on else "OFF"
+	AudioServer.set_bus_mute(0, not on)
+	_save_settings()
+
+func _on_sensitivity_changed(v: float) -> void:
+	_sens_value.text = "%.2f" % v
+	_save_settings()
+
+func _on_play_pressed() -> void:
+	_click_player.play()
+	_save_settings()
 	get_tree().change_scene_to_file(GAME_SCENE)
 
-func _on_options_selected(id: int) -> void:
-	# 3-dot menu items: 0 = Offline Mode, 1 = Settings, 2 = Profile.
-	# (Online Mode is item 3 and stays disabled — Phase 2.)
-	match id:
-		0:
-			_start_game()
-		1:
-			_settings_overlay.visible = true
-		2:
-			_profile_overlay.visible = true
-
-func _close_settings() -> void:
-	_save_settings()
-	_settings_overlay.visible = false
-
-# --- settings ------------------------------------------------------------
-
-func _set_bus_volume(bus_name: String, value_0_1: float) -> void:
-	var idx := AudioServer.get_bus_index(bus_name)
-	if idx == -1:
-		return
-	# Slider 0..1 -> decibels; mute at the very bottom.
-	AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(value_0_1, 0.001)))
-	AudioServer.set_bus_mute(idx, value_0_1 <= 0.01)
-
-func _apply_graphics() -> void:
-	# Low = render at 70% resolution (real mobile performance gain),
-	# High = full resolution. More toggles arrive with real art assets.
-	get_tree().root.scaling_3d_scale = 0.7 if _graphics_option.selected == 0 else 1.0
+# --- persistence -----------------------------------------------------------
 
 func _save_settings() -> void:
+	if _sens_slider == null or _sound_check == null:
+		return
 	var cfg := ConfigFile.new()
-	cfg.set_value("settings", "music", _music_slider.value)
-	cfg.set_value("settings", "sfx", _sfx_slider.value)
-	cfg.set_value("settings", "sensitivity", _sensitivity_slider.value)
-	cfg.set_value("settings", "graphics", _graphics_option.selected)
+	cfg.load(SETTINGS_PATH) # keep any keys written by other screens
+	cfg.set_value("settings", "sensitivity", _sens_slider.value)
+	cfg.set_value("settings", "sound", _sound_check.button_pressed)
+	cfg.set_value("settings", "starting_weapon", _selected_weapon)
 	cfg.save(SETTINGS_PATH)
 
 func _load_settings() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SETTINGS_PATH) != OK:
+		# First run ever: sound is ON by default — make the toggle say so.
+		_sound_check.set_pressed_no_signal(true)
+		_sound_check.text = "ON"
+		_select_map(_selected_map)
+		_select_weapon(_selected_weapon)
 		return
-	_music_slider.value = float(cfg.get_value("settings", "music", 0.8))
-	_sfx_slider.value = float(cfg.get_value("settings", "sfx", 0.8))
-	_sensitivity_slider.value = float(cfg.get_value("settings", "sensitivity", 1.0))
-	_graphics_option.selected = int(cfg.get_value("settings", "graphics", 1))
-	_set_bus_volume("Music", _music_slider.value)
-	_set_bus_volume("SFX", _sfx_slider.value)
-	_apply_graphics()
+	var sens := clampf(float(cfg.get_value("settings", "sensitivity", 1.0)), 0.5, 2.0)
+	_sens_slider.set_value_no_signal(sens)
+	_sens_value.text = "%.2f" % sens
+	var sound_on := bool(cfg.get_value("settings", "sound", true))
+	_sound_check.set_pressed_no_signal(sound_on)
+	_sound_check.text = "ON" if sound_on else "OFF"
+	AudioServer.set_bus_mute(0, not sound_on)
+	_select_map(_selected_map)
+	var wid := str(cfg.get_value("settings", "starting_weapon", "pistol"))
+	if not Weapons.ORDER.has(wid):
+		wid = "pistol"
+	_select_weapon(wid)

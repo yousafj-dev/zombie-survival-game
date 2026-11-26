@@ -30,6 +30,8 @@ var _firing: bool = false
 var _dead: bool = false
 var _sensitivity: float = 1.0
 var _flash_left: float = 0.0
+var _shot_player: AudioStreamPlayer3D
+var _reload_player: AudioStreamPlayer3D
 
 @onready var _body: Node3D = $Body
 @onready var _flash: OmniLight3D = $Body/GunMount/MuzzleFlash
@@ -53,6 +55,15 @@ func _ready() -> void:
 	for id in Weapons.ORDER:
 		_mag_ammo[id] = Weapons.get_weapon(id)["magazine"]
 		_reserve_ammo[id] = Weapons.get_weapon(id)["reserve"]
+	# Procedural sound effects (generated in code — no audio files).
+	_shot_player = AudioStreamPlayer3D.new()
+	_shot_player.bus = &"SFX"
+	_shot_player.stream = SfxGen.gunshot()
+	add_child(_shot_player)
+	_reload_player = AudioStreamPlayer3D.new()
+	_reload_player.bus = &"SFX"
+	_reload_player.stream = SfxGen.reload_click()
+	add_child(_reload_player)
 	_load_settings()
 	_update_gun_visibility()
 	_emit_weapon_signals()
@@ -61,6 +72,14 @@ func _load_settings() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load("user://settings.cfg") == OK:
 		_sensitivity = float(cfg.get_value("settings", "sensitivity", 1.0))
+		# The gun picked in the lobby is the gun the run starts with.
+		var wid := str(cfg.get_value("settings", "starting_weapon", ""))
+		var idx := Weapons.ORDER.find(wid)
+		if idx >= 0:
+			_weapon_index = idx
+		# The lobby's Sound toggle mutes the Master bus; apply it here too
+		# so the choice holds even if the game scene is entered directly.
+		AudioServer.set_bus_mute(0, not bool(cfg.get_value("settings", "sound", true)))
 
 # --- called by the HUD -------------------------------------------------
 
@@ -178,6 +197,7 @@ func _try_fire() -> void:
 	ammo_changed.emit(_mag_ammo[id], _reserve_ammo[id])
 	_flash.visible = true
 	_flash_left = 0.05
+	_shot_player.play()
 
 	var target := _find_target(float(data["range"]))
 	if target == null:
@@ -213,3 +233,4 @@ func _finish_reload() -> void:
 	_mag_ammo[id] += take
 	_reserve_ammo[id] -= take
 	ammo_changed.emit(_mag_ammo[id], _reserve_ammo[id])
+	_reload_player.play()

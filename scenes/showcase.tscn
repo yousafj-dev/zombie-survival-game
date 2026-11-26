@@ -1,0 +1,227 @@
+[gd_scene load_steps=29 format=3]
+
+[ext_resource type="Script" path="res://scripts/showcase.gd" id="1"]
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.04, 0.055, 0.035, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.76, 0.85, 1)
+ambient_light_energy = 0.85
+tonemap_mode = 0
+
+[sub_resource type="StandardMaterial3D" id="mat_ground"]
+albedo_color = Color(0.16, 0.17, 0.16, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_podium"]
+albedo_color = Color(0.07, 0.08, 0.07, 1)
+
+[sub_resource type="CylinderMesh" id="mesh_disc"]
+top_radius = 1.7
+bottom_radius = 1.7
+height = 0.12
+radial_segments = 32
+
+[sub_resource type="CylinderMesh" id="mesh_podium"]
+top_radius = 2.1
+bottom_radius = 2.2
+height = 0.06
+radial_segments = 32
+
+[sub_resource type="StandardMaterial3D" id="mat_soldier"]
+albedo_color = Color(0.34, 0.4, 0.24, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_skin"]
+albedo_color = Color(0.87, 0.66, 0.5, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_helmet"]
+albedo_color = Color(0.22, 0.27, 0.17, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_pack"]
+albedo_color = Color(0.26, 0.23, 0.19, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_gunmetal"]
+albedo_color = Color(0.16, 0.16, 0.18, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_gunwood"]
+albedo_color = Color(0.36, 0.23, 0.13, 1)
+
+[sub_resource type="BoxMesh" id="mesh_leg"]
+size = Vector3(0.16, 0.75, 0.18)
+
+[sub_resource type="BoxMesh" id="mesh_torso"]
+size = Vector3(0.52, 0.65, 0.28)
+
+[sub_resource type="BoxMesh" id="mesh_head"]
+size = Vector3(0.3, 0.32, 0.3)
+
+[sub_resource type="BoxMesh" id="mesh_helmet"]
+size = Vector3(0.36, 0.13, 0.36)
+
+[sub_resource type="BoxMesh" id="mesh_arm"]
+size = Vector3(0.13, 0.55, 0.15)
+
+[sub_resource type="BoxMesh" id="mesh_pack"]
+size = Vector3(0.4, 0.5, 0.16)
+
+[sub_resource type="BoxMesh" id="mesh_pistol_body"]
+size = Vector3(0.07, 0.12, 0.28)
+
+[sub_resource type="BoxMesh" id="mesh_pistol_barrel"]
+size = Vector3(0.05, 0.05, 0.16)
+
+[sub_resource type="BoxMesh" id="mesh_grip"]
+size = Vector3(0.06, 0.15, 0.08)
+
+[sub_resource type="BoxMesh" id="mesh_rifle_body"]
+size = Vector3(0.08, 0.14, 0.62)
+
+[sub_resource type="BoxMesh" id="mesh_rifle_barrel"]
+size = Vector3(0.045, 0.045, 0.3)
+
+[sub_resource type="BoxMesh" id="mesh_magazine"]
+size = Vector3(0.06, 0.18, 0.1)
+
+[sub_resource type="BoxMesh" id="mesh_stock"]
+size = Vector3(0.07, 0.12, 0.18)
+
+[sub_resource type="BoxMesh" id="mesh_shotgun_body"]
+size = Vector3(0.09, 0.13, 0.55)
+
+[sub_resource type="BoxMesh" id="mesh_shotgun_barrel"]
+size = Vector3(0.07, 0.07, 0.35)
+
+[sub_resource type="BoxMesh" id="mesh_pump"]
+size = Vector3(0.1, 0.09, 0.18)
+
+[node name="Showcase" type="Node3D"]
+script = ExtResource("1")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+light_energy = 1.45
+
+[node name="Podium" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.13, 0)
+mesh = SubResource("mesh_podium")
+surface_material_override/0 = SubResource("mat_podium")
+
+[node name="GroundDisc" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.06, 0)
+mesh = SubResource("mesh_disc")
+surface_material_override/0 = SubResource("mat_ground")
+
+[node name="Character" type="Node3D" parent="."]
+
+[node name="Body" type="Node3D" parent="Character"]
+
+[node name="LegL" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.11, 0.375, 0)
+mesh = SubResource("mesh_leg")
+surface_material_override/0 = SubResource("mat_helmet")
+
+[node name="LegR" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11, 0.375, 0)
+mesh = SubResource("mesh_leg")
+surface_material_override/0 = SubResource("mat_helmet")
+
+[node name="Torso" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, 0)
+mesh = SubResource("mesh_torso")
+surface_material_override/0 = SubResource("mat_soldier")
+
+[node name="Backpack" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0.23)
+mesh = SubResource("mesh_pack")
+surface_material_override/0 = SubResource("mat_pack")
+
+[node name="Head" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
+mesh = SubResource("mesh_head")
+surface_material_override/0 = SubResource("mat_skin")
+
+[node name="Helmet" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.72, 0)
+mesh = SubResource("mesh_helmet")
+surface_material_override/0 = SubResource("mat_helmet")
+
+[node name="ArmL" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33, 1.12, 0)
+mesh = SubResource("mesh_arm")
+surface_material_override/0 = SubResource("mat_soldier")
+
+[node name="ArmR" type="MeshInstance3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.33, 1.12, 0)
+mesh = SubResource("mesh_arm")
+surface_material_override/0 = SubResource("mat_soldier")
+
+[node name="GunMount" type="Node3D" parent="Character/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 1.3, -0.3)
+
+[node name="PistolModel" type="Node3D" parent="Character/Body/GunMount"]
+
+[node name="Body" type="MeshInstance3D" parent="Character/Body/GunMount/PistolModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, -0.08)
+mesh = SubResource("mesh_pistol_body")
+surface_material_override/0 = SubResource("mat_gunmetal")
+
+[node name="Barrel" type="MeshInstance3D" parent="Character/Body/GunMount/PistolModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07, -0.27)
+mesh = SubResource("mesh_pistol_barrel")
+surface_material_override/0 = SubResource("mat_gunmetal")
+
+[node name="Grip" type="MeshInstance3D" parent="Character/Body/GunMount/PistolModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0.02)
+mesh = SubResource("mesh_grip")
+surface_material_override/0 = SubResource("mat_gunwood")
+
+[node name="RifleModel" type="Node3D" parent="Character/Body/GunMount"]
+visible = false
+
+[node name="Body" type="MeshInstance3D" parent="Character/Body/GunMount/RifleModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, -0.28)
+mesh = SubResource("mesh_rifle_body")
+surface_material_override/0 = SubResource("mat_gunmetal")
+
+[node name="Barrel" type="MeshInstance3D" parent="Character/Body/GunMount/RifleModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, -0.72)
+mesh = SubResource("mesh_rifle_barrel")
+surface_material_override/0 = SubResource("mat_gunmetal")
+
+[node name="Magazine" type="MeshInstance3D" parent="Character/Body/GunMount/RifleModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.13, -0.3)
+mesh = SubResource("mesh_magazine")
+surface_material_override/0 = SubResource("mat_gunmetal")
+
+[node name="Stock" type="MeshInstance3D" parent="Character/Body/GunMount/RifleModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, 0.13)
+mesh = SubResource("mesh_stock")
+surface_material_override/0 = SubResource("mat_gunwood")
+
+[node name="ShotgunModel" type="Node3D" parent="Character/Body/GunMount"]
+visible = false
+
+[node name="Body" type="MeshInstance3D" parent="Character/Body/GunMount/ShotgunModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, -0.24)
+mesh = SubResource("mesh_shotgun_body")
+surface_material_override/0 = SubResource("mat_gunmetal")
+
+[node name="Barrel" type="MeshInstance3D" parent="Character/Body/GunMount/ShotgunModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, -0.65)
+mesh = SubResource("mesh_shotgun_barrel")
+surface_material_override/0 = SubResource("mat_gunmetal")
+
+[node name="Pump" type="MeshInstance3D" parent="Character/Body/GunMount/ShotgunModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.04, -0.45)
+mesh = SubResource("mesh_pump")
+surface_material_override/0 = SubResource("mat_gunwood")
+
+[node name="Stock" type="MeshInstance3D" parent="Character/Body/GunMount/ShotgunModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, 0.13)
+mesh = SubResource("mesh_stock")
+surface_material_override/0 = SubResource("mat_gunwood")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+current = true

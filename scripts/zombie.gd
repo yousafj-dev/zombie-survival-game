@@ -27,6 +27,7 @@ var _last_pos: Vector3 = Vector3.ZERO
 var _stuck_time: float = 0.0
 var _strafe_left: float = 0.0
 var _strafe_sign: float = 1.0
+var _hit_player: AudioStreamPlayer3D
 
 @onready var _nav: NavigationAgent3D = $NavigationAgent3D
 @onready var _body: Node3D = $Body
@@ -36,6 +37,11 @@ func setup(boss: bool) -> void:
 
 func _ready() -> void:
 	add_to_group("zombie")
+	# Procedural hit thud (generated in code — no audio files).
+	_hit_player = AudioStreamPlayer3D.new()
+	_hit_player.bus = &"SFX"
+	_hit_player.stream = SfxGen.zombie_hit()
+	add_child(_hit_player)
 	_health = max_health
 	if is_boss:
 		_health = max_health * 10
@@ -68,6 +74,8 @@ func take_damage(amount: int) -> void:
 	if _dead:
 		return
 	_health -= amount
+	if _hit_player != null:
+		_hit_player.play()
 	# Hit feedback: red flash on every body part + a quick squash.
 	for m in _part_mats:
 		m.albedo_color = Color(1.0, 0.35, 0.3)
