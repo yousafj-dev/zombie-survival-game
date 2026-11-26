@@ -1,1 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="18" fill="#1a1a22"/><text x="64" y="82" font-family="sans-serif" font-size="52" font-weight="bold" fill="#c8352c" text-anchor="middle">ZS</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="z" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a5e832"/>
+      <stop offset="1" stop-color="#4d9b0f"/>
+    </linearGradient>
+    <clipPath id="r"><rect x="4" y="4" width="120" height="120" rx="24"/></clipPath>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="24" fill="#0c110a"/>
+  <rect x="4" y="4" width="120" height="120" rx="24" fill="none" stroke="#2c3d1e" stroke-width="3"/>
+  <g clip-path="url(#r)">
+    <path d="M36 32 H92 L54 96 H94" fill="none" stroke="url(#z)" stroke-width="17" stroke-linecap="square"/>
+    <g stroke="#0c110a" stroke-width="5" stroke-linecap="round">
+      <path d="M30 84 L66 20"/>
+      <path d="M52 96 L88 32"/>
+      <path d="M74 104 L104 52"/>
+    </g>
+    <circle cx="100" cy="98" r="5" fill="#c1272d"/>
+    <circle cx="108" cy="106" r="3" fill="#c1272d"/>
+  </g>
+</svg>
