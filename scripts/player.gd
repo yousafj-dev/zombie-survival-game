@@ -29,8 +29,15 @@ var _reload_left: float = 0.0
 var _firing: bool = false
 var _dead: bool = false
 var _sensitivity: float = 1.0
+var _flash_left: float = 0.0
 
-@onready var _mesh: MeshInstance3D = $MeshInstance3D
+@onready var _body: Node3D = $Body
+@onready var _flash: OmniLight3D = $Body/GunMount/MuzzleFlash
+@onready var _guns: Dictionary = {
+	"pistol": $Body/GunMount/PistolModel,
+	"rifle": $Body/GunMount/RifleModel,
+	"shotgun": $Body/GunMount/ShotgunModel,
+}
 @onready var _camera_pivot: Node3D = $CameraPivot
 @onready var _muzzle: Marker3D = $Muzzle
 
@@ -41,6 +48,7 @@ func _ready() -> void:
 		_mag_ammo[id] = Weapons.get_weapon(id)["magazine"]
 		_reserve_ammo[id] = Weapons.get_weapon(id)["reserve"]
 	_load_settings()
+	_update_gun_visibility()
 	_emit_weapon_signals()
 
 func _load_settings() -> void:
@@ -68,7 +76,14 @@ func reload() -> void:
 func switch_weapon() -> void:
 	_weapon_index = (_weapon_index + 1) % Weapons.ORDER.size()
 	_reload_left = 0.0
+	_update_gun_visibility()
 	_emit_weapon_signals()
+
+func _update_gun_visibility() -> void:
+	var current := _current_id()
+	for key in _guns.keys():
+		var gun: Node3D = _guns[key]
+		gun.visible = str(key) == current
 
 # --- combat ------------------------------------------------------------
 
@@ -114,18 +129,24 @@ func _physics_process(delta: float) -> void:
 	if direction.length() > 0.05:
 		velocity.x = direction.x * move_speed
 		velocity.z = direction.z * move_speed
-		var target_yaw := atan2(direction.x, direction.z)
-		_mesh.rotation.y = lerp_angle(_mesh.rotation.y, target_yaw, turn_speed * _sensitivity * delta)
-		rotation.y = _mesh.rotation.y
+		# The model is built facing -Z, so yaw must map -Z onto the move dir.
+		var target_yaw := atan2(-direction.x, -direction.z)
+		rotation.y = lerp_angle(rotation.y, target_yaw, turn_speed * _sensitivity * delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, move_speed)
 		velocity.z = move_toward(velocity.z, 0.0, move_speed)
 
 	if not is_on_floor():
-		velocity.y -= get_gravity().y * delta
+		velocity += get_gravity() * delta
 	else:
 		velocity.y = -0.1
 	move_and_slide()
+
+	# Muzzle flash timer.
+	if _flash_left > 0.0:
+		_flash_left -= delta
+		if _flash_left <= 0.0:
+			_flash.visible = false
 
 	# Weapon timers.
 	_fire_cooldown = maxf(0.0, _fire_cooldown - delta)
@@ -149,6 +170,8 @@ func _try_fire() -> void:
 	_fire_cooldown = 1.0 / float(data["fire_rate"])
 	_mag_ammo[id] -= 1
 	ammo_changed.emit(_mag_ammo[id], _reserve_ammo[id])
+	_flash.visible = true
+	_flash_left = 0.05
 
 	var target := _find_target(float(data["range"]))
 	if target == null:
