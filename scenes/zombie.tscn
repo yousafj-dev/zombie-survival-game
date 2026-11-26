@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/zombie.gd" id="1"]
 
@@ -6,12 +6,35 @@
 radius = 0.4
 height = 1.8
 
-[sub_resource type="CapsuleMesh" id="body_mesh"]
-radius = 0.4
-height = 1.8
+[sub_resource type="StandardMaterial3D" id="mat_zskin"]
+albedo_color = Color(0.56, 0.63, 0.43, 1)
 
-[sub_resource type="StandardMaterial3D" id="body_mat"]
-albedo_color = Color(0.35, 0.55, 0.25, 1)
+[sub_resource type="StandardMaterial3D" id="mat_ztorso"]
+albedo_color = Color(0.4, 0.47, 0.33, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_zlegs"]
+albedo_color = Color(0.3, 0.31, 0.27, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_zeye"]
+albedo_color = Color(0.1, 0, 0, 1)
+emission_enabled = true
+emission = Color(1, 0.1, 0.1, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="BoxMesh" id="mesh_leg"]
+size = Vector3(0.17, 0.75, 0.19)
+
+[sub_resource type="BoxMesh" id="mesh_torso"]
+size = Vector3(0.54, 0.65, 0.3)
+
+[sub_resource type="BoxMesh" id="mesh_head"]
+size = Vector3(0.31, 0.33, 0.31)
+
+[sub_resource type="BoxMesh" id="mesh_arm_fwd"]
+size = Vector3(0.13, 0.13, 0.58)
+
+[sub_resource type="BoxMesh" id="mesh_eye"]
+size = Vector3(0.05, 0.05, 0.02)
 
 [node name="Zombie" type="CharacterBody3D" groups=["zombie"]]
 collision_layer = 4
@@ -22,10 +45,47 @@ script = ExtResource("1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("body_shape")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-material_override = SubResource("body_mat")
-mesh = SubResource("body_mesh")
+[node name="Body" type="Node3D" parent="."]
+
+[node name="LegL" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12, 0.375, 0)
+mesh = SubResource("mesh_leg")
+surface_material_override/0 = SubResource("mat_zlegs")
+
+[node name="LegR" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 0.375, 0)
+mesh = SubResource("mesh_leg")
+surface_material_override/0 = SubResource("mat_zlegs")
+
+[node name="Torso" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, 0)
+mesh = SubResource("mesh_torso")
+surface_material_override/0 = SubResource("mat_ztorso")
+
+[node name="Head" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.57, 0)
+mesh = SubResource("mesh_head")
+surface_material_override/0 = SubResource("mat_zskin")
+
+[node name="EyeL" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 1.6, -0.16)
+mesh = SubResource("mesh_eye")
+surface_material_override/0 = SubResource("mat_zeye")
+
+[node name="EyeR" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 1.6, -0.16)
+mesh = SubResource("mesh_eye")
+surface_material_override/0 = SubResource("mat_zeye")
+
+[node name="ArmL" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.31, 1.32, -0.29)
+mesh = SubResource("mesh_arm_fwd")
+surface_material_override/0 = SubResource("mat_zskin")
+
+[node name="ArmR" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.31, 1.32, -0.29)
+mesh = SubResource("mesh_arm_fwd")
+surface_material_override/0 = SubResource("mat_zskin")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
 path_desired_distance = 0.6
