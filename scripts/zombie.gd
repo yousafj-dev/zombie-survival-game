@@ -15,6 +15,7 @@ signal died(zombie: Node)
 @export var attack_cooldown: float = 1.0
 
 var is_boss: bool = false
+var _mission: int = 1
 
 var _health: int
 var _attack_left: float = 0.0
@@ -35,6 +36,11 @@ var _hit_player: AudioStreamPlayer3D
 func setup(boss: bool) -> void:
 	is_boss = boss
 
+## Called by the game manager (before add_child) with the mission number.
+## Stats are scaled from it in _ready.
+func setup_mission(m: int) -> void:
+	_mission = maxi(1, m)
+
 func _ready() -> void:
 	add_to_group("zombie")
 	# Procedural hit thud (generated in code — no audio files).
@@ -42,6 +48,13 @@ func _ready() -> void:
 	_hit_player.bus = &"SFX"
 	_hit_player.stream = SfxGen.zombie_hit()
 	add_child(_hit_player)
+	# Mission scaling ("bilkul tuff"): +30% health per mission (compounding),
+	# +5% speed per mission (hard cap 1.6x base), +1 attack damage per mission.
+	# The boss multipliers in the block below stack on top of these.
+	var steps := float(_mission - 1)
+	max_health = int(round(float(max_health) * pow(1.3, steps)))
+	speed = speed * minf(1.0 + 0.05 * steps, 1.6)
+	attack_damage = attack_damage + (_mission - 1)
 	_health = max_health
 	if is_boss:
 		_health = max_health * 10

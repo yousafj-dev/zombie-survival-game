@@ -32,6 +32,9 @@ const COL_CARD_DISABLED := Color(0.07, 0.07, 0.07)
 
 var _selected_weapon: String = "pistol"
 var _selected_map: String = "dead_city"
+var _selected_mission: int = 1
+var _highest_mission: int = 1
+var _mission_label: Label
 var _gun_buttons: Dictionary = {}
 var _map_buttons: Dictionary = {}
 var _showcase: Node = null
@@ -193,7 +196,55 @@ func _build_maps_column() -> PanelContainer:
 		b.pressed.connect(_on_map_pressed.bind(id))
 		_map_buttons[id] = b
 		v.add_child(b)
+		if id == "dead_city":
+			v.add_child(_build_mission_row())
 	return panel
+
+func _build_mission_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.name = "MissionRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 8)
+	var prev := Button.new()
+	prev.name = "MissionPrev"
+	prev.text = "◀"
+	prev.custom_minimum_size = Vector2(56, 48)
+	prev.add_theme_font_size_override("font_size", 22)
+	prev.add_theme_color_override("font_color", COL_TEXT)
+	_style_card(prev)
+	prev.pressed.connect(func() -> void:
+		_set_mission(_selected_mission - 1)
+		_click_player.play())
+	row.add_child(prev)
+	_mission_label = Label.new()
+	_mission_label.name = "MissionLabel"
+	_mission_label.text = "MISSION 1"
+	_mission_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mission_label.custom_minimum_size = Vector2(160, 0)
+	_mission_label.add_theme_font_size_override("font_size", 22)
+	_mission_label.add_theme_color_override("font_color", COL_TEXT)
+	row.add_child(_mission_label)
+	var next := Button.new()
+	next.name = "MissionNext"
+	next.text = "▶"
+	next.custom_minimum_size = Vector2(56, 48)
+	next.add_theme_font_size_override("font_size", 22)
+	next.add_theme_color_override("font_color", COL_TEXT)
+	_style_card(next)
+	next.pressed.connect(func() -> void:
+		_set_mission(_selected_mission + 1)
+		_click_player.play())
+	row.add_child(next)
+	return row
+
+func _set_mission(n: int) -> void:
+	_selected_mission = clampi(n, 1, maxi(1, _highest_mission))
+	_refresh_mission_label()
+	_save_settings()
+
+func _refresh_mission_label() -> void:
+	if _mission_label != null:
+		_mission_label.text = "MISSION %d" % _selected_mission
 
 func _build_guns_settings_column() -> PanelContainer:
 	var panel := _panel()
@@ -310,6 +361,8 @@ func _save_settings() -> void:
 	cfg.set_value("settings", "sensitivity", _sens_slider.value)
 	cfg.set_value("settings", "sound", _sound_check.button_pressed)
 	cfg.set_value("settings", "starting_weapon", _selected_weapon)
+	cfg.set_value("progress", "highest_mission", _highest_mission)
+	cfg.set_value("progress", "selected_mission", _selected_mission)
 	cfg.save(SETTINGS_PATH)
 
 func _load_settings() -> void:
@@ -318,9 +371,13 @@ func _load_settings() -> void:
 		# First run ever: sound is ON by default — make the toggle say so.
 		_sound_check.set_pressed_no_signal(true)
 		_sound_check.text = "ON"
+		_refresh_mission_label()
 		_select_map(_selected_map)
 		_select_weapon(_selected_weapon)
 		return
+	_highest_mission = maxi(1, int(cfg.get_value("progress", "highest_mission", 1)))
+	_selected_mission = clampi(int(cfg.get_value("progress", "selected_mission", _highest_mission)), 1, _highest_mission)
+	_refresh_mission_label()
 	var sens := clampf(float(cfg.get_value("settings", "sensitivity", 1.0)), 0.5, 2.0)
 	_sens_slider.set_value_no_signal(sens)
 	_sens_value.text = "%.2f" % sens
