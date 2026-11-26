@@ -43,6 +43,12 @@ var _flash_left: float = 0.0
 
 func _ready() -> void:
 	add_to_group("player")
+	# Camera angle is set in code on purpose: the fixed follow camera must
+	# pitch DOWN ~51 degrees at the player. (A transposed basis in the scene
+	# file once pitched it up at the sky and shipped an empty screen.)
+	var cam := _camera_pivot.get_node("Camera3D") as Camera3D
+	cam.rotation_degrees = Vector3(-51, 0, 0)
+	cam.current = true
 	health = max_health
 	for id in Weapons.ORDER:
 		_mag_ammo[id] = Weapons.get_weapon(id)["magazine"]
