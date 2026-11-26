@@ -52,6 +52,13 @@ jobs:
           touch android/build/.gdignore
           ls -la android android/build
 
+      - name: Make Vulkan optional in Android manifest
+        run: |
+          MANIFEST=$(find android/build -path '*src/main/AndroidManifest.xml' | head -1)
+          echo "Manifest: $MANIFEST"
+          sed -i '/android.hardware.vulkan/s/android:required="true"/android:required="false"/g' "$MANIFEST"
+          grep -n 'uses-feature' "$MANIFEST" || true
+
       - name: Export Android APK
         env:
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /home/runner/.android/debug.keystore
