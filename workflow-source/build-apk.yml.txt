@@ -61,6 +61,13 @@ jobs:
           mkdir -p build
           ./Godot_v4.3-stable_linux.x86_64 --headless --export-debug "Android" build/zombie-survival.apk
 
+      - name: Align and re-sign APK
+        run: |
+          BT=$(ls -d "${ANDROID_HOME:-$ANDROID_SDK_ROOT}"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -f -P 16 4 build/zombie-survival.apk build/aligned.apk || "$BT/zipalign" -f -p 4 build/zombie-survival.apk build/aligned.apk
+          "$BT/apksigner" sign --ks ~/.android/debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --out build/zombie-survival.apk build/aligned.apk
+          "$BT/apksigner" verify build/zombie-survival.apk
+
       - name: Publish APK release
         uses: softprops/action-gh-release@v2
         with:
