@@ -13,6 +13,7 @@ static var _gunshot: AudioStreamWAV
 static var _reload_click: AudioStreamWAV
 static var _zombie_hit: AudioStreamWAV
 static var _ui_click: AudioStreamWAV
+static var _pickup: AudioStreamWAV
 
 static func gunshot() -> AudioStreamWAV:
 	if _gunshot == null:
@@ -33,6 +34,11 @@ static func ui_click() -> AudioStreamWAV:
 	if _ui_click == null:
 		_ui_click = _make(_render_ui_click())
 	return _ui_click
+
+static func pickup() -> AudioStreamWAV:
+	if _pickup == null:
+		_pickup = _make(_render_pickup())
+	return _pickup
 
 # --- rendering -----------------------------------------------------------
 
@@ -81,6 +87,16 @@ static func _render_ui_click() -> PackedByteArray:
 	for i in count:
 		var t := float(i) / MIX_RATE
 		samples[i] = sin(TAU * 1350.0 * t) * exp(-t * 95.0) * 0.32
+	return _pack(samples)
+
+static func _render_pickup() -> PackedByteArray:
+	var count := int(MIX_RATE * 0.16)
+	var samples: Array = []
+	samples.resize(count)
+	for i in count:
+		var t := float(i) / MIX_RATE
+		var freq := 880.0 if t < 0.07 else 1318.0
+		samples[i] = sin(TAU * freq * t) * exp(-t * 14.0) * 0.4
 	return _pack(samples)
 
 static func _pack(samples: Array) -> PackedByteArray:
