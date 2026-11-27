@@ -13,6 +13,25 @@ signal health_changed(current: int, maximum: int)
 signal ammo_changed(magazine: int, reserve: int)
 signal weapon_changed(weapon_name: String)
 signal player_died
+signal hit_landed
+signal took_damage
+
+## The real hero model (KayKit Adventurers, CC0 — downloaded by CI into
+## res://assets/models/player/). KayKit heroes are ~2.24 m in raw units,
+## so the model is scaled to the 1.8 m the capsule/gameplay assume.
+## The model faces +Z; everything in this project faces -Z.
+const HERO_PATH := "res://assets/models/player/Rogue_Hooded.glb"
+const HERO_SCALE := 0.8
+const MODEL_YAW := PI
+## KayKit's built-in hand props — hidden; our guns replace them.
+const PROP_MESHES: Array[String] = ["Knife_Offhand", "1H_Crossbow", "2H_Crossbow", "Knife", "Throwable"]
+## Where the gun mount sits inside the right handslot bone. Tuned
+## against render captures of the real model holding each gun.
+const GUN_MOUNT_POSITION := Vector3(0.0, 0.0, 0.0)
+# Tuned from render captures: yawing the old gun mount -90 degrees
+# inside the handslot puts the barrel forward in the hero's
+# two-handed grip (identity left it sideways, hidden in the fist).
+const GUN_MOUNT_ROTATION := Vector3(0.0, -PI / 2.0, 0.0)
 
 @export var max_health: int = 100
 @export var move_speed: float = 5.0
@@ -32,6 +51,9 @@ var _sensitivity: float = 1.0
 var _flash_left: float = 0.0
 var _shot_player: AudioStreamPlayer3D
 var _reload_player: AudioStreamPlayer3D
+var _wdata: Dictionary = {} # weapon id -> stats with lobby upgrades applied
+var _anim: AnimationPlayer
+var _shot_age: float = 99.0 # seconds since the last shot (drives the aim pose)
 
 @onready var _body: Node3D = $Body
 @onready var _flash: OmniLight3D = $Body/GunMount/MuzzleFlash
@@ -53,8 +75,9 @@ func _ready() -> void:
 	cam.current = true
 	health = max_health
 	for id in Weapons.ORDER:
-		_mag_ammo[id] = Weapons.get_weapon(id)["magazine"]
-		_reserve_ammo[id] = Weapons.get_weapon(id)["reserve"]
+		_wdata[id] = Weapons.get_upgraded(id)
+		_mag_ammo[id] = _wdata[id]["magazine"]
+		_reserve_ammo[id] = _wdata[id]["reserve"]
 	# Procedural sound effects (generated in code — no audio files).
 	_shot_player = AudioStreamPlayer3D.new()
 	_shot_player.bus = &"SFX"
@@ -65,6 +88,7 @@ func _ready() -> void:
 	_reload_player.stream = SfxGen.reload_click()
 	add_child(_reload_player)
 	_load_settings()
+	_load_hero()
 	_update_gun_visibility()
 	_emit_weapon_signals()
 
@@ -91,7 +115,7 @@ func set_firing(on: bool) -> void:
 
 func reload() -> void:
 	var id := _current_id()
-	var data := Weapons.get_weapon(id)
+	var data: Dictionary = _wdata[id]
 	if _reload_left > 0.0:
 		return
 	if _mag_ammo[id] >= int(data["magazine"]) or _reserve_ammo[id] <= 0:
@@ -117,6 +141,7 @@ func take_damage(amount: int) -> void:
 		return
 	health = maxi(0, health - amount)
 	health_changed.emit(health, max_health)
+	took_damage.emit()
 	if health <= 0:
 		_dead = true
 		player_died.emit()
@@ -125,13 +150,21 @@ func heal(amount: int) -> void:
 	health = mini(max_health, health + amount)
 	health_changed.emit(health, max_health)
 
+## Ammo pickup: a refill for every weapon's reserve.
+func add_ammo_pickup() -> void:
+	_reserve_ammo["pistol"] = int(_reserve_ammo["pistol"]) + 24
+	_reserve_ammo["rifle"] = int(_reserve_ammo["rifle"]) + 60
+	_reserve_ammo["shotgun"] = int(_reserve_ammo["shotgun"]) + 12
+	var id := _current_id()
+	ammo_changed.emit(_mag_ammo[id], _reserve_ammo[id])
+
 func _current_id() -> String:
 	return Weapons.ORDER[_weapon_index]
 
 func _emit_weapon_signals() -> void:
 	var id := _current_id()
 	ammo_changed.emit(_mag_ammo[id], _reserve_ammo[id])
-	weapon_changed.emit(Weapons.get_weapon(id)["name"])
+	weapon_changed.emit(_wdata[id]["name"])
 	health_changed.emit(health, max_health)
 
 func _physics_process(delta: float) -> void:
@@ -184,9 +217,20 @@ func _physics_process(delta: float) -> void:
 	if wants_fire:
 		_try_fire()
 
+	# Hero animation: run while moving, aim pose just after a shot,
+	# idle otherwise.
+	_shot_age += delta
+	if _anim != null:
+		var clip := "Idle"
+		if Vector2(velocity.x, velocity.z).length() > 0.4:
+			clip = "Running_A"
+		elif _shot_age < 0.35:
+			clip = "2H_Ranged_Aiming"
+		_play_clip(clip)
+
 func _try_fire() -> void:
 	var id := _current_id()
-	var data := Weapons.get_weapon(id)
+	var data: Dictionary = _wdata[id]
 	if _fire_cooldown > 0.0 or _reload_left > 0.0:
 		return
 	if _mag_ammo[id] <= 0:
@@ -198,6 +242,7 @@ func _try_fire() -> void:
 	_flash.visible = true
 	_flash_left = 0.05
 	_shot_player.play()
+	_shot_age = 0.0
 
 	var target := _find_target(float(data["range"]))
 	if target == null:
@@ -205,13 +250,17 @@ func _try_fire() -> void:
 	# One raycast per pellet, from chest height toward the target's chest.
 	var from := _muzzle.global_position
 	var target_pos: Vector3 = target.global_position + Vector3.UP * 1.2
+	var any_hit := false
 	for i in int(data["pellets"]):
 		var spread := Vector3(randf_range(-0.4, 0.4), randf_range(-0.2, 0.2), randf_range(-0.4, 0.4)) if int(data["pellets"]) > 1 else Vector3.ZERO
 		var query := PhysicsRayQueryParameters3D.create(from, target_pos + spread)
 		query.collision_mask = 0b0101 # World (1) + Zombie layer (bit 3 = 4)
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider == target:
+			any_hit = true
 			target.take_damage(int(data["damage"]))
+	if any_hit:
+		hit_landed.emit()
 
 func _find_target(max_range: float) -> Node3D:
 	var best: Node3D = null
@@ -227,10 +276,59 @@ func _find_target(max_range: float) -> Node3D:
 
 func _finish_reload() -> void:
 	var id := _current_id()
-	var data := Weapons.get_weapon(id)
+	var data: Dictionary = _wdata[id]
 	var need: int = int(data["magazine"]) - int(_mag_ammo[id])
 	var take: int = mini(need, int(_reserve_ammo[id]))
 	_mag_ammo[id] += take
 	_reserve_ammo[id] -= take
 	ammo_changed.emit(_mag_ammo[id], _reserve_ammo[id])
 	_reload_player.play()
+
+# --- hero model ----------------------------------------------------------
+
+## Instances the KayKit hero under Body, hides the placeholder body
+## parts and KayKit's own hand props, and moves the gun mount into the
+## hero's right handslot bone so the gun follows the hand animation.
+## If the model file is missing, the placeholder body stays and the
+## game plays exactly as before.
+func _load_hero() -> void:
+	var inst := ModelUtil.load_model(HERO_PATH)
+	if inst == null:
+		return
+	var holder := Node3D.new()
+	holder.name = "ModelRoot"
+	holder.scale = Vector3.ONE * HERO_SCALE
+	holder.rotation.y = MODEL_YAW
+	_body.add_child(holder)
+	holder.add_child(inst)
+	for prop in PROP_MESHES:
+		var n := inst.find_child(prop, true, false)
+		if n is Node3D:
+			(n as Node3D).visible = false
+	for child in _body.get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).visible = false
+	_anim = ModelUtil.find_animation_player(inst)
+	if _anim != null:
+		ModelUtil.set_looping(_anim, ["Idle", "Running_A", "Walking_A", "2H_Ranged_Aiming"])
+		_play_clip("Idle")
+	_attach_gun_to_hand(inst)
+
+func _attach_gun_to_hand(inst: Node) -> void:
+	var skel := ModelUtil.find_skeleton(inst)
+	if skel == null or skel.find_bone("handslot.r") < 0:
+		return
+	var mount := (_guns["pistol"] as Node3D).get_parent() as Node3D
+	if mount == null:
+		return
+	var attach := BoneAttachment3D.new()
+	attach.bone_name = "handslot.r"
+	skel.add_child(attach)
+	mount.get_parent().remove_child(mount)
+	attach.add_child(mount)
+	mount.position = GUN_MOUNT_POSITION
+	mount.rotation = GUN_MOUNT_ROTATION
+
+func _play_clip(clip: String) -> void:
+	if _anim != null and _anim.has_animation(clip) and _anim.current_animation != clip:
+		_anim.play(clip)
