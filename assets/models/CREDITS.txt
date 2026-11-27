@@ -1,0 +1,16 @@
+Model credits
+=============
+
+Zombie models (assets/models/zombies/zombie-walker.glb, zombie-runner.glb,
+zombie-brute.glb, zombie-crawler.glb):
+  "Zombie Walker / Runner / Brute / Crawler" by Vinish.dev
+  https://vinish.dev/free-3d-models/
+  Licensed under CC BY 4.0 (attribution required — also shown in the
+  game's lobby). Downloaded by the build workflow from
+  https://vinish-models.pages.dev/zombies/
+
+Hero model (assets/models/player/Rogue_Hooded.glb) and city models
+(assets/models/city/):
+  KayKit Character Pack: Adventurers and KayKit City Builder Bits
+  by Kay Lousberg — https://github.com/KayKit-Game-Assets
+  Licensed under CC0 1.0 (public domain dedication).
