@@ -16,6 +16,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Download 3D model packs
+        run: |
+          set -e
+          mkdir -p assets/models/zombies assets/models/player assets/models/city /tmp/packs
+          cd /tmp/packs
+          for f in zombie-walker zombie-runner zombie-brute zombie-crawler; do
+            wget -q "https://vinish-models.pages.dev/zombies/$f.glb" -O "$GITHUB_WORKSPACE/assets/models/zombies/$f.glb"
+          done
+          wget -q https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/archive/refs/heads/main.zip -O heroes.zip
+          wget -q https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0/archive/refs/heads/main.zip -O city.zip
+          unzip -q heroes.zip "KayKit-Character-Pack-Adventures-1.0-main/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb"
+          cp KayKit-Character-Pack-Adventures-1.0-main/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb "$GITHUB_WORKSPACE/assets/models/player/"
+          unzip -q city.zip "KayKit-City-Builder-Bits-1.0-main/addons/kaykit_city_builder_bits/Assets/gltf/*"
+          cp KayKit-City-Builder-Bits-1.0-main/addons/kaykit_city_builder_bits/Assets/gltf/* "$GITHUB_WORKSPACE/assets/models/city/"
+          find "$GITHUB_WORKSPACE/assets/models" -type f | sort
+          du -sh "$GITHUB_WORKSPACE/assets/models"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
