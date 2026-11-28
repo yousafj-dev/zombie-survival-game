@@ -75,16 +75,16 @@ albedo_color = Color(0.43, 0.49, 0.43, 1)
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
-background_color = Color(0.42, 0.27, 0.19, 1)
+background_color = Color(0.47, 0.33, 0.25, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.62, 0.45, 0.34, 1)
-ambient_light_energy = 0.72
+ambient_light_color = Color(0.67, 0.56, 0.48, 1)
+ambient_light_energy = 1.05
 tonemap_mode = 3
 fog_enabled = true
-fog_light_color = Color(0.45, 0.3, 0.22, 1)
+fog_light_color = Color(0.55, 0.41, 0.31, 1)
 fog_light_energy = 1.0
 fog_sun_scatter = 0.3
-fog_density = 0.018
+fog_density = 0.006
 
 [sub_resource type="NavigationMesh" id="navmesh"]
 vertices = PackedVector3Array(-38, 0.1, -38, -38, 0.1, 38, 38, 0.1, 38, 38, 0.1, -38)
