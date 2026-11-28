@@ -24,10 +24,8 @@ jobs:
           for f in zombie-walker zombie-runner zombie-brute zombie-crawler; do
             wget -q "https://vinish-models.pages.dev/zombies/$f.glb" -O "$GITHUB_WORKSPACE/assets/models/zombies/$f.glb"
           done
-          wget -q https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/archive/refs/heads/main.zip -O heroes.zip
+          wget -q https://vinish-models.pages.dev/people/soldier.glb -O "$GITHUB_WORKSPACE/assets/models/player/soldier.glb"
           wget -q https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0/archive/refs/heads/main.zip -O city.zip
-          unzip -q heroes.zip "KayKit-Character-Pack-Adventures-1.0-main/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb"
-          cp KayKit-Character-Pack-Adventures-1.0-main/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb "$GITHUB_WORKSPACE/assets/models/player/"
           unzip -q city.zip "KayKit-City-Builder-Bits-1.0-main/addons/kaykit_city_builder_bits/Assets/gltf/*"
           cp KayKit-City-Builder-Bits-1.0-main/addons/kaykit_city_builder_bits/Assets/gltf/* "$GITHUB_WORKSPACE/assets/models/city/"
           find "$GITHUB_WORKSPACE/assets/models" -type f | sort
