@@ -4,19 +4,19 @@ extends Node3D
 ## The hero stands on a small ground patch and slowly sways left/right
 ## so his front — and the gun he is holding — stays in view. The menu
 ## calls set_weapon() whenever the Guns selection changes.
-## The hero is the real KayKit model (same one as in game; its gun sits
-## in the right handslot bone). If the model file is missing, the
+## The hero is the real Vinish soldier model (same one as in game; its
+## gun sits in the right hand bone). If the model file is missing, the
 ## placeholder soldier in the scene is used instead.
 ## Camera and sun angles are set in code (a hand-written basis in a scene
 ## file once shipped a camera staring at the sky — not again).
 
-const HERO_PATH := "res://assets/models/player/Rogue_Hooded.glb"
-const HERO_SCALE := 0.8 # KayKit heroes are ~2.24 m raw; 1.8 m is the game's unit.
-const MODEL_YAW := PI # KayKit models face +Z; the showcase front is -Z.
-const PROP_MESHES: Array[String] = ["Knife_Offhand", "1H_Crossbow", "2H_Crossbow", "Knife", "Throwable"]
+const HERO_PATH := "res://assets/models/player/soldier.glb"
+const HERO_SCALE := 0.987 # Vinish soldier is 1.824 m raw; 1.8 m is the game's unit.
+const MODEL_YAW := PI # The model faces +Z; the showcase front is -Z.
+const PROP_MESHES: Array[String] = [] # The soldier has no built-in hand props.
 const GUN_MOUNT_POSITION := Vector3(0.0, 0.0, 0.0)
 # Same mount tuning as scripts/player.gd (render-verified).
-const GUN_MOUNT_ROTATION := Vector3(0.0, -PI / 2.0, 0.0)
+const GUN_MOUNT_ROTATION := Vector3(-0.0647, 3.0508, 0.6645) # Same solved mount as player.gd.
 
 var _time: float = 0.0
 
@@ -64,13 +64,13 @@ func _load_hero() -> void:
 
 func _attach_gun_to_hand(inst: Node) -> void:
 	var skel := ModelUtil.find_skeleton(inst)
-	if skel == null or skel.find_bone("handslot.r") < 0:
+	if skel == null or skel.find_bone("Hand_R") < 0:
 		return
 	var mount := (_guns["pistol"] as Node3D).get_parent() as Node3D
 	if mount == null:
 		return
 	var attach := BoneAttachment3D.new()
-	attach.bone_name = "handslot.r"
+	attach.bone_name = "Hand_R"
 	skel.add_child(attach)
 	mount.get_parent().remove_child(mount)
 	attach.add_child(mount)
