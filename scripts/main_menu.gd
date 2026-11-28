@@ -186,7 +186,7 @@ func _build_character_column() -> PanelContainer:
 
 	var credits := Label.new()
 	credits.name = "CreditsLabel"
-	credits.text = "Zombie models: Vinish.dev (CC BY 4.0)\nHero & city models: KayKit (CC0)"
+	credits.text = "Hero & zombie models: Vinish.dev (CC BY 4.0)\nCity models: KayKit (CC0)"
 	credits.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	credits.add_theme_font_size_override("font_size", 13)
 	credits.add_theme_color_override("font_color", COL_DIM)
