@@ -200,9 +200,8 @@ omni_range = 3.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 1.4, -0.6)
 
 [node name="CameraPivot" type="Node3D" parent="."]
-top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot"]
-transform = Transform3D(1, 0, 0, 0, 0.629, 0.777, 0, -0.777, 0.629, 0, 2.9, 2.25)
 current = true
-fov = 65.0
+fov = 70.0

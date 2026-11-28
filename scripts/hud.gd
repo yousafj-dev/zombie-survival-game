@@ -21,6 +21,8 @@ extends CanvasLayer
 @onready var _switch_button: Button = $SwitchButton
 
 var _player: Node
+var _look_touch: int = -1 # touch index currently driving the view
+var _look_mouse: bool = false # mouse drag currently driving the view
 var _result_backdrop: ColorRect
 var _result_panel: CenterContainer
 var _result_title: Label
@@ -147,6 +149,27 @@ class IconPainter extends Control:
 		draw_rect(Rect2(c - Vector2(0.09, 0.27) * s, Vector2(0.18, 0.54) * s), col)
 		draw_rect(Rect2(c - Vector2(0.27, 0.09) * s, Vector2(0.54, 0.18) * s), col)
 
+## Centre-screen crosshair for first-person aiming: a dot, a ring and
+## four ticks, drawn twice (dark shadow pass, then white) so it reads
+## over bright streets and dark corners alike.
+class CrosshairPainter extends Control:
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var c := size * 0.5
+		for pass_i in 2:
+			var col := Color(0, 0, 0, 0.55) if pass_i == 0 else Color(1, 1, 1, 0.92)
+			var off := Vector2(1, 1) if pass_i == 0 else Vector2.ZERO
+			var w := 3.0 if pass_i == 0 else 2.0
+			draw_arc(c + off, 13.0, 0.0, TAU, 40, col, w, true)
+			# Four ticks, just outside the ring.
+			draw_line(c + off + Vector2(0, -23), c + off + Vector2(0, -16.5), col, w, true)
+			draw_line(c + off + Vector2(0, 16.5), c + off + Vector2(0, 23), col, w, true)
+			draw_line(c + off + Vector2(-23, 0), c + off + Vector2(-16.5, 0), col, w, true)
+			draw_line(c + off + Vector2(16.5, 0), c + off + Vector2(23, 0), col, w, true)
+		draw_circle(c, 2.4, Color(1, 1, 1, 0.95))
+
 # --- lifecycle ---------------------------------------------------------------
 
 func _ready() -> void:
@@ -175,6 +198,47 @@ func _bind_player() -> void:
 	_fire_button.button_up.connect(func() -> void: _player.set_firing(false))
 	_reload_button.pressed.connect(func() -> void: _player.reload())
 	_switch_button.pressed.connect(func() -> void: _player.switch_weapon())
+
+# --- look input (first person) ----------------------------------------------
+## Dragging a finger on the right half of the screen — anywhere that is
+## not a button or the joystick — turns the player's view. The joystick
+## (left) and the FIRE / RELOAD / SWITCH buttons keep their own touches;
+## their rects are excluded here so a look drag never starts on them.
+## Mouse drags work the same way for desktop testing.
+
+func _input(event: InputEvent) -> void:
+	if _player == null or not is_instance_valid(_player):
+		return
+	var width := get_viewport().get_visible_rect().size.x
+	if event is InputEventScreenTouch:
+		var t := event as InputEventScreenTouch
+		if t.pressed:
+			if _look_touch == -1 and t.position.x >= width * 0.4 and not _in_controls(t.position):
+				_look_touch = t.index
+		elif t.index == _look_touch:
+			_look_touch = -1
+	elif event is InputEventScreenDrag:
+		var d := event as InputEventScreenDrag
+		if d.index == _look_touch:
+			_player.add_look_input(d.relative)
+	elif event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				if mb.position.x >= width * 0.4 and not _in_controls(mb.position):
+					_look_mouse = true
+			else:
+				_look_mouse = false
+	elif event is InputEventMouseMotion:
+		var mm := event as InputEventMouseMotion
+		if _look_mouse:
+			_player.add_look_input(mm.relative)
+
+func _in_controls(p: Vector2) -> bool:
+	for c in [_joystick, _fire_button, _reload_button, _switch_button]:
+		if c != null and (c as Control).get_global_rect().has_point(p):
+			return true
+	return false
 
 func _process(_delta: float) -> void:
 	if is_instance_valid(_player):
@@ -506,6 +570,16 @@ func _build_feedback_ui() -> void:
 	_boss_bar.add_theme_stylebox_override("fill", fill)
 	_boss_bar.visible = false
 	add_child(_boss_bar)
+
+	# Crosshair first, so the hit marker (added next) draws on top of it.
+	var crosshair := CrosshairPainter.new()
+	crosshair.name = "Crosshair"
+	crosshair.set_anchors_preset(Control.PRESET_CENTER)
+	crosshair.offset_left = -32.0
+	crosshair.offset_top = -32.0
+	crosshair.offset_right = 32.0
+	crosshair.offset_bottom = 32.0
+	add_child(crosshair)
 
 	_hit_marker = Label.new()
 	_hit_marker.name = "HitMarker"
