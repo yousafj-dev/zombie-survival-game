@@ -16,22 +16,24 @@ signal player_died
 signal hit_landed
 signal took_damage
 
-## The real hero model (KayKit Adventurers, CC0 — downloaded by CI into
-## res://assets/models/player/). KayKit heroes are ~2.24 m in raw units,
-## so the model is scaled to the 1.8 m the capsule/gameplay assume.
+## The real hero model (Vinish.dev "Soldier", CC BY 4.0 — downloaded by
+## CI into res://assets/models/player/). An adult soldier in woodland
+## camo with Idle/Walk/Run clips, 1.824 m in raw units, scaled to the
+## 1.8 m the capsule/gameplay assume.
 ## The model faces +Z; everything in this project faces -Z.
-const HERO_PATH := "res://assets/models/player/Rogue_Hooded.glb"
-const HERO_SCALE := 0.8
+const HERO_PATH := "res://assets/models/player/soldier.glb"
+const HERO_SCALE := 0.987
 const MODEL_YAW := PI
-## KayKit's built-in hand props — hidden; our guns replace them.
-const PROP_MESHES: Array[String] = ["Knife_Offhand", "1H_Crossbow", "2H_Crossbow", "Knife", "Throwable"]
-## Where the gun mount sits inside the right handslot bone. Tuned
+## The soldier carries no built-in hand props; nothing to hide.
+const PROP_MESHES: Array[String] = []
+## Where the gun mount sits inside the right hand (Hand_R) bone. Tuned
 ## against render captures of the real model holding each gun.
 const GUN_MOUNT_POSITION := Vector3(0.0, 0.0, 0.0)
-# Tuned from render captures: yawing the old gun mount -90 degrees
-# inside the handslot puts the barrel forward in the hero's
-# two-handed grip (identity left it sideways, hidden in the fist).
-const GUN_MOUNT_ROTATION := Vector3(0.0, -PI / 2.0, 0.0)
+# Solved numerically against the soldier's Hand_R bone in the Idle
+# pose and verified top-down + numerically: with this rotation the
+# barrel points exactly along the hero's forward (0, 0, -1) while the
+# grip sits in his right hand (identity left it sideways).
+const GUN_MOUNT_ROTATION := Vector3(-0.0647, 3.0508, 0.6645)
 
 @export var max_health: int = 100
 @export var move_speed: float = 5.0
@@ -223,9 +225,9 @@ func _physics_process(delta: float) -> void:
 	if _anim != null:
 		var clip := "Idle"
 		if Vector2(velocity.x, velocity.z).length() > 0.4:
-			clip = "Running_A"
+			clip = "Run"
 		elif _shot_age < 0.35:
-			clip = "2H_Ranged_Aiming"
+			clip = "Idle"
 		_play_clip(clip)
 
 func _try_fire() -> void:
@@ -286,9 +288,9 @@ func _finish_reload() -> void:
 
 # --- hero model ----------------------------------------------------------
 
-## Instances the KayKit hero under Body, hides the placeholder body
-## parts and KayKit's own hand props, and moves the gun mount into the
-## hero's right handslot bone so the gun follows the hand animation.
+## Instances the soldier hero under Body, hides the placeholder body
+## parts, and moves the gun mount into the hero's right hand bone so
+## the gun follows the hand animation.
 ## If the model file is missing, the placeholder body stays and the
 ## game plays exactly as before.
 func _load_hero() -> void:
@@ -310,19 +312,19 @@ func _load_hero() -> void:
 			(child as MeshInstance3D).visible = false
 	_anim = ModelUtil.find_animation_player(inst)
 	if _anim != null:
-		ModelUtil.set_looping(_anim, ["Idle", "Running_A", "Walking_A", "2H_Ranged_Aiming"])
+		ModelUtil.set_looping(_anim, ["Idle", "Run", "Walk"])
 		_play_clip("Idle")
 	_attach_gun_to_hand(inst)
 
 func _attach_gun_to_hand(inst: Node) -> void:
 	var skel := ModelUtil.find_skeleton(inst)
-	if skel == null or skel.find_bone("handslot.r") < 0:
+	if skel == null or skel.find_bone("Hand_R") < 0:
 		return
 	var mount := (_guns["pistol"] as Node3D).get_parent() as Node3D
 	if mount == null:
 		return
 	var attach := BoneAttachment3D.new()
-	attach.bone_name = "handslot.r"
+	attach.bone_name = "Hand_R"
 	skel.add_child(attach)
 	mount.get_parent().remove_child(mount)
 	attach.add_child(mount)
