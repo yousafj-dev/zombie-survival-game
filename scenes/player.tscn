@@ -203,6 +203,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 1.4, -0.6)
 top_level = true
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot"]
-transform = Transform3D(1, 0, 0, 0, 0.629, 0.777, 0, -0.777, 0.629, 0, 9, 7.5)
+transform = Transform3D(1, 0, 0, 0, 0.629, 0.777, 0, -0.777, 0.629, 0, 6.5, 5.2)
 current = true
 fov = 65.0
